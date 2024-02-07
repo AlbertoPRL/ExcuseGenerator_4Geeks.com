@@ -1,81 +1,54 @@
-const path = require('path');
+'use strict'
 
-const PrettierPlugin = require("./_utils/prettier.js");
-const cleanStack = require("./_utils/clean-stack.js");
-const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
-const ErrorOverlayPlugin = require('error-overlay-webpack-plugin');
-const WebpackErrorReporting = require('bc-webpack-error-reporting-plugin');
+const path = require('path')
+const autoprefixer = require('autoprefixer')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-
-const port = 3000;
-let publicUrl = `http://localhost:${port}`;
-if(process.env.GITPOD_WORKSPACE_URL){
-  const [schema, host] = process.env.GITPOD_WORKSPACE_URL.split('://');
-  publicUrl = `${port}-${host}`;
-}
 
 module.exports = {
   mode: 'development',
-  entry: ['./src/app.js'],
+  entry: './src/js/main.js',
   output: {
-    path: path.resolve(__dirname, 'public'),
-    filename: 'main.bundle.js',
-    sourceMapFilename: '[name].js.map'
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist')
   },
-  devtool: "source-map",
   devServer: {
-    historyApiFallback: true,
-    public: publicUrl,
-    stats: 'errors-warnings',
+    static: path.resolve(__dirname, 'dist'),
+    port: 8080,
+    hot: true
   },
+  plugins: [
+    new HtmlWebpackPlugin({ template: './src/index.html' })
+  ],
   module: {
     rules: [
       {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: ['babel-loader', 'eslint-loader']
-      },
-      {
-        test: /\.css$/,
-        use: ['style-loader', 'css-loader']
-      },
-      {
-        test: /\.(png|svg|jpg|gif|ico)$/,
-        use: {
-          loader: 'file-loader',
-          options: { name: '[name].[ext]' }
-        }
-      },
-      {
-        test: /\.html$/i,
-        use: {
-          loader: 'html-loader',
-          options: {
-            attributes: false
+        test: /\.(scss)$/,
+        use: [
+          {
+            // Adds CSS to the DOM by injecting a `<style>` tag
+            loader: 'style-loader'
+          },
+          {
+            // Interprets `@import` and `url()` like `import/require()` and will resolve them
+            loader: 'css-loader'
+          },
+          {
+            // Loader for webpack to process CSS with PostCSS
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  autoprefixer
+                ]
+              }
+            }
+          },
+          {
+            // Loads a SASS/SCSS file and compiles it to CSS
+            loader: 'sass-loader'
           }
-        }
+        ]
       }
     ]
-  },
-  plugins: [
-    new WebpackErrorReporting({
-      hookURL: process.env.BC_ERROR_HOOK,
-      username: process.env.BC_STUDENT_EMAIL,
-      token: process.env.BC_ASSETS_TOKEN,
-      compiler: "webpack",
-      language: "html,css,javascript",
-      framework: "vanillajs"
-    }),
-    new FriendlyErrorsWebpackPlugin({
-        // additionalFormatters: [cleanStack]
-    }),
-    new ErrorOverlayPlugin(),
-    new HtmlWebpackPlugin({
-        filename: "index.html",
-        template: "src/index.html"
-    }),
-    new PrettierPlugin({
-        failSilently: true
-    }),
-  ]
-};
+  }
+}
